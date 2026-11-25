@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPEED AI - Video Clipping</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #080d18;
+      color: white;
+      text-align: center;
+    }
+    header {
+      padding: 22px;
+      background: #111a2c;
+      font-size: 28px;
+      font-weight: bold;
+      color: #39d5ff;
+    }
+    main {
+      max-width: 600px;
+      margin: 45px auto;
+      padding: 25px;
+    }
+    .panel {
+      background: #121d31;
+      padding: 25px;
+      border-radius: 16px;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 9px;
+      border: 1px solid #34445e;
+      font-size: 16px;
+    }
+    input, textarea {
+      background: #091323;
+      color: white;
+    }
+    button {
+      background: #00bfff;
+      color: #00111c;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; }
+    #result { margin-top: 20px; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+
+<header>⚡ SPEED AI</header>
+
+<main>
+  <div class="panel">
+    <h2>AI Video Clipping</h2>
+    <p>Upload your video and create your clipping request.</p>
+
+    <input type="file" id="video" accept="video/*">
+
+    <textarea id="prompt" rows="4"
+      placeholder="Describe the clips you want..."></textarea>
+
+    <input type="number" id="duration"
+      value="30" min="5" placeholder="Clip duration in seconds">
+
+    <button id="generate" onclick="generateVideo()">
+      Generate Clips
+    </button>
+
+    <div id="result"></div>
+  </div>
+</main>
+
+<script>
+const API = "https://speed-ai-clipping.onrender.com";
+
+async function generateVideo() {
+  const prompt = document.getElementById("prompt").value.trim();
+  const duration = Number(document.getElementById("duration").value);
+  const result = document.getElementById("result");
+  const button = document.getElementById("generate");
+
+  if (!prompt) {
+    result.textContent = "Please enter a prompt.";
+    return;
+  }
+
+  button.disabled = true;
+  result.textContent = "Sending request...";
+
+  try {
+    const response = await fetch(API + "/api/video/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, duration })
+    });
+
+    const data = await response.json();
+
+    result.textContent = data.success
+      ? "Request received! Status: " + data.status
+      : "Error: " + data.message;
+
+  } catch (error) {
+    result.textContent = "Connection error. Please try again.";
+  }
+
+  button.disabled = false;
+}
+</script>
+
+</body>
+  </html>
+    
