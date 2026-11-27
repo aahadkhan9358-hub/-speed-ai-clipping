@@ -2,121 +2,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SPEED AI - Video Clipping</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #080d18;
-      color: white;
-      text-align: center;
-    }
-    header {
-      padding: 22px;
-      background: #111a2c;
-      font-size: 28px;
-      font-weight: bold;
-      color: #39d5ff;
-    }
-    main {
-      max-width: 600px;
-      margin: 45px auto;
-      padding: 25px;
-    }
-    .panel {
-      background: #121d31;
-      padding: 25px;
-      border-radius: 16px;
-    }
-    input, textarea, button {
-      width: 100%;
-      padding: 14px;
-      margin-top: 15px;
-      border-radius: 9px;
-      border: 1px solid #34445e;
-      font-size: 16px;
-    }
-    input, textarea {
-      background: #091323;
-      color: white;
-    }
-    button {
-      background: #00bfff;
-      color: #00111c;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-    }
-    button:disabled { opacity: 0.5; }
-    #result { margin-top: 20px; overflow-wrap: anywhere; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPEED AI - Video Clipping</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#080d18;
+  color:white;
+  font-family:Arial,sans-serif;
+}
+header{
+  padding:22px;
+  text-align:center;
+  background:#111a2c;
+  color:#35d5ff;
+  font-size:30px;
+  font-weight:bold;
+}
+main{
+  max-width:650px;
+  margin:35px auto;
+  padding:20px;
+}
+.panel{
+  background:#121d31;
+  padding:25px;
+  border-radius:18px;
+  text-align:center;
+}
+input,textarea,button{
+  width:100%;
+  padding:15px;
+  margin-top:15px;
+  border-radius:9px;
+  font-size:16px;
+}
+input,textarea{
+  background:#091323;
+  color:white;
+  border:1px solid #34445e;
+}
+button{
+  background:#00bfff;
+  color:#00111c;
+  border:0;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:disabled{opacity:.5}
+#result{
+  margin-top:20px;
+  overflow-wrap:anywhere;
+}
+</style>
 </head>
+
 <body>
 
 <header>⚡ SPEED AI</header>
 
 <main>
-  <div class="panel">
-    <h2>AI Video Clipping</h2>
-    <p>Upload your video and create your clipping request.</p>
+<div class="panel">
 
-    <input type="file" id="video" accept="video/*">
+<h2>AI VIDEO CLIPPING</h2>
+<p>Upload your video to SPEED AI</p>
 
-    <textarea id="prompt" rows="4"
-      placeholder="Describe the clips you want..."></textarea>
+<input type="file" id="video" accept="video/*">
 
-    <input type="number" id="duration"
-      value="30" min="5" placeholder="Clip duration in seconds">
+<button id="uploadBtn" onclick="uploadVideo()">
+UPLOAD VIDEO
+</button>
 
-    <button id="generate" onclick="generateVideo()">
-      Generate Clips
-    </button>
+<hr style="margin-top:25px;border-color:#34445e">
 
-    <div id="result"></div>
-  </div>
+<textarea id="prompt" rows="4"
+placeholder="Describe the clips you want..."></textarea>
+
+<input type="number" id="duration"
+value="30" min="5">
+
+<button id="generateBtn" onclick="generateVideo()">
+GENERATE CLIPS
+</button>
+
+<div id="result">Ready to upload your video.</div>
+
+</div>
 </main>
 
 <script>
 const API = "https://speed-ai-clipping.onrender.com";
 
-async function generateVideo() {
-  const prompt = document.getElementById("prompt").value.trim();
-  const duration = Number(document.getElementById("duration").value);
-  const result = document.getElementById("result");
-  const button = document.getElementById("generate");
+let uploadedFileName = "";
 
-  if (!prompt) {
-    result.textContent = "Please enter a prompt.";
-    return;
-  }
+async function uploadVideo(){
 
-  button.disabled = true;
-  result.textContent = "Sending request...";
+ const file = document.getElementById("video").files[0];
+ const result = document.getElementById("result");
+ const btn = document.getElementById("uploadBtn");
 
-  try {
-    const response = await fetch(API + "/api/video/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, duration })
-    });
+ if(!file){
+   result.textContent = "Please select a video first.";
+   return;
+ }
 
-    const data = await response.json();
+ if(!file.type.startsWith("video/")){
+   result.textContent = "Please select a video file.";
+   return;
+ }
 
-    result.textContent = data.success
-      ? "Request received! Status: " + data.status
-      : "Error: " + data.message;
+ if(file.size > 200 * 1024 * 1024){
+   result.textContent = "Video must be under 200 MB.";
+   return;
+ }
 
-  } catch (error) {
-    result.textContent = "Connection error. Please try again.";
-  }
+ const formData = new FormData();
+ formData.append("video", file);
 
-  button.disabled = false;
+ btn.disabled = true;
+ result.textContent = "Uploading video...";
+
+ try{
+   const response = await fetch(API + "/api/video/upload",{
+     method:"POST",
+     body:formData
+   });
+
+   const data = await response.json();
+
+   if(!response.ok){
+     throw new Error(data.message || "Upload failed");
+   }
+
+   uploadedFileName = data.fileName;
+
+   result.textContent =
+     "Video uploaded successfully! File: " + data.fileName;
+
+ }catch(error){
+   result.textContent = "Upload error: " + error.message;
+ }finally{
+   btn.disabled = false;
+ }
+}
+
+async function generateVideo(){
+
+ const prompt = document.getElementById("prompt").value.trim();
+ const duration = Number(document.getElementById("duration").value);
+ const result = document.getElementById("result");
+ const btn = document.getElementById("generateBtn");
+
+ if(!uploadedFileName){
+   result.textContent = "Please upload a video first.";
+   return;
+ }
+
+ if(!prompt){
+   result.textContent = "Please enter a prompt.";
+   return;
+ }
+
+ btn.disabled = true;
+ result.textContent = "Sending request...";
+
+ try{
+   const response = await fetch(API + "/api/video/generate",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({
+       prompt,
+       duration,
+       fileName:uploadedFileName
+     })
+   });
+
+   const data = await response.json();
+
+   if(!response.ok){
+     throw new Error(data.message || "Request failed");
+   }
+
+   result.textContent =
+     "Request received! Status: " + data.status;
+
+ }catch(error){
+   result.textContent = "Error: " + error.message;
+ }finally{
+   btn.disabled = false;
+ }
 }
 </script>
 
 </body>
-  </html>
-    
+</html>
